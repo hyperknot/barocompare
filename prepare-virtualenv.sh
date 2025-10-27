@@ -16,7 +16,3 @@ find . -name node_modules -type d -prune -exec rm -rf {} +
 
 pnpm i
 
-(cd fe || exit
-pnpm i)
-
-

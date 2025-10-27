@@ -19,14 +19,14 @@ Barometric sensors are automatically calibrated to GPS altitude using the first 
 
 ## Local Development
 
-1. Navigate to the frontend directory:
+1. Install dependencies:
    ```bash
-   cd fe
+   pnpm i
    ```
 
-2. Install dependencies:
+2. Navigate to the frontend directory:
    ```bash
-   pnpm install
+   cd fe
    ```
 
 3. Start the development server:
