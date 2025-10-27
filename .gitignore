@@ -1,0 +1,22 @@
+# generic dirs
+*.egg-info/
+.astro/
+.venv/
+.wrangler/
+__pycache__/
+build/
+dist/
+dist-electron/
+node_modules/
+release/
+wheels/
+
+# generic files
+*.py[oc]
+.DS_Store
+.env
+_llm.txt
+thumbs.db
+
+# project specific
+/data

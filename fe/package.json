@@ -1,0 +1,26 @@
+{
+  "name": "fe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf dist*",
+    "dev": "pnpm clean; vite",
+    "build": "vite build && rg ISDEV_TEST_STRING dist/ -uuu || true",
+    "preview": "pnpm build; vite preview",
+    "typecheck:node": "cd ..; pnpm tsc -p tsconfig.node.json --composite false",
+    "typecheck:web": "cd ..; pnpm tsc -p tsconfig.app.json --composite false",
+    "typecheck": "pnpm typecheck:node && pnpm typecheck:web"
+  },
+  "dependencies": {
+    "@kobalte/core": "^0.13.11",
+    "lucide-solid": "^0.544.0",
+    "solid-js": "^1.9.9",
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "sass-embedded": "^1.93.2",
+    "tailwindcss": "^4.1.13",
+    "vite": "^7.1.7",
+    "vite-plugin-solid": "^2.11.8"
+  }
+}

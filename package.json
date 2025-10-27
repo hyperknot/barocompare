@@ -1,0 +1,23 @@
+{
+  "name": "barocompare",
+  "private": true,
+  "scripts": {
+    "biome-debug": "biome check --write --unsafe --verbose .",
+    "eslint-list": "eslint --debug 2>&1 | grep /repo | sed 's|.*/repo||' | sort -u",
+    "eslint-check": "eslint --report-unused-disable-directives --max-warnings 0",
+    "eslint-fix": "eslint --report-unused-disable-directives --max-warnings 0 --fix"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "@eslint/compat": "^1.4.0",
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^24.5.2",
+    "@typescript-eslint/parser": "^8.44.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.35.0",
+    "eslint-plugin-solid": "^0.14.5",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.44.1"
+  }
+}
