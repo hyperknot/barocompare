@@ -16,10 +16,7 @@ export const DropZone: Component<DropZoneProps> = (props) => {
             : 'border-gray-300 bg-white'
         }`}
       >
-        <p class="text-lg mb-2">Drop .igc files here</p>
-        <p class="text-sm text-gray-600">
-          First 2 .igc files (sorted by filename) will be used
-        </p>
+        <p class="text-lg mb-2">Drop 2 .igc files here</p>
       </div>
     </Show>
   )

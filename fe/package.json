@@ -9,7 +9,9 @@
     "preview": "pnpm build; vite preview",
     "typecheck:node": "cd ..; pnpm tsc -p tsconfig.node.json --composite false",
     "typecheck:web": "cd ..; pnpm tsc -p tsconfig.app.json --composite false",
-    "typecheck": "pnpm typecheck:node && pnpm typecheck:web"
+    "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
+    "preview_w": "pnpm build && wrangler dev",
+    "deploy_w": "pnpm build && wrangler deploy"
   },
   "dependencies": {
     "@kobalte/core": "^0.13.11",
@@ -23,6 +25,7 @@
     "sass-embedded": "^1.93.2",
     "tailwindcss": "^4.1.13",
     "vite": "^7.1.7",
-    "vite-plugin-solid": "^2.11.8"
+    "vite-plugin-solid": "^2.11.8",
+     "wrangler": "^4.43.0"
   }
 }
