@@ -129,18 +129,17 @@ function calculateBaroAnalytics(
 
 function calculateGPSAnalytics(
   allSharedSeconds: number[],
-  gpsMap: Map<number, number>,
-  otherGpsMap: Map<number, number>
+  gps1Map: Map<number, number>,
+  gps2Map: Map<number, number>
 ): GPSAnalytics {
   const differences: number[] = []
 
   for (const second of allSharedSeconds) {
-    const gps1 = gpsMap.get(second)
-    const gps2 = otherGpsMap.get(second)
+    const gps1 = gps1Map.get(second)
+    const gps2 = gps2Map.get(second)
 
     if (gps1 !== undefined && gps2 !== undefined) {
-      const avgGps = (gps1 + gps2) / 2
-      differences.push(gps1 - avgGps)
+      differences.push(gps1 - gps2)
     }
   }
 
@@ -188,12 +187,7 @@ export function calculateBaroCalibration(
         maxDifference: 0,
         percentile95: 0
       },
-      gps1Analytics: {
-        meanDifference: 0,
-        maxDifference: 0,
-        percentile95: 0
-      },
-      gps2Analytics: {
+      gpsAnalytics: {
         meanDifference: 0,
         maxDifference: 0,
         percentile95: 0
@@ -208,9 +202,8 @@ export function calculateBaroCalibration(
   // Calculate baro analytics using all shared points
   const baroAnalytics = calculateBaroAnalytics(sharedSeconds, maps, baro1Offset, baro2Offset)
 
-  // Calculate GPS analytics using all shared points
-  const gps1Analytics = calculateGPSAnalytics(sharedSeconds, maps.file1GpsMap, maps.file2GpsMap)
-  const gps2Analytics = calculateGPSAnalytics(sharedSeconds, maps.file2GpsMap, maps.file1GpsMap)
+  // Calculate GPS1 vs GPS2 analytics using all shared points
+  const gpsAnalytics = calculateGPSAnalytics(sharedSeconds, maps.file1GpsMap, maps.file2GpsMap)
 
   return {
     baro1Offset,
@@ -218,8 +211,7 @@ export function calculateBaroCalibration(
     pointsUsed: calibrationPoints.length,
     referenceAltitude,
     baroAnalytics,
-    gps1Analytics,
-    gps2Analytics
+    gpsAnalytics
   }
 }
 

@@ -18,8 +18,7 @@ export interface CalibrationInfo {
   pointsUsed: number
   referenceAltitude: number
   baroAnalytics: BaroAnalytics
-  gps1Analytics: GPSAnalytics
-  gps2Analytics: GPSAnalytics
+  gpsAnalytics: GPSAnalytics
 }
 
 export interface TimeRange {
