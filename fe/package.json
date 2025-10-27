@@ -17,15 +17,15 @@
     "@kobalte/core": "^0.13.11",
     "echarts": "^6.0.0",
     "igc-parser": "^2.0.0",
-    "lucide-solid": "^0.544.0",
-    "solid-js": "^1.9.9"
+    "lucide-solid": "^0.548.0",
+    "solid-js": "^1.9.10"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.13",
+    "@tailwindcss/vite": "^4.1.16",
     "sass-embedded": "^1.93.2",
-    "tailwindcss": "^4.1.13",
-    "vite": "^7.1.7",
-    "vite-plugin-solid": "^2.11.8",
-     "wrangler": "^4.43.0"
+    "tailwindcss": "^4.1.16",
+    "vite": "^7.1.12",
+    "vite-plugin-solid": "^2.11.10",
+    "wrangler": "^4.43.0"
   }
 }
