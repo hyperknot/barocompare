@@ -38,4 +38,4 @@ Barometric sensors are automatically calibrated to GPS altitude using the first 
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License
