@@ -5,7 +5,7 @@ import { AppUI } from './App.tsx'
 
 // 1. tailwind, 2. scss
 import './styles/tailwind/_tailwind.css'
-import './styles/stylesheet.scss'
+import './styles/_base.scss'
 
 const root = document.getElementById('root')
 

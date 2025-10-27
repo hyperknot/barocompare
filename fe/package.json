@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@kobalte/core": "^0.13.11",
+    "echarts": "^6.0.0",
+    "igc-parser": "^2.0.0",
     "lucide-solid": "^0.544.0",
     "solid-js": "^1.9.9"
   },
