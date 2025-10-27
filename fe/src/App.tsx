@@ -4,8 +4,5 @@ import { NavigationBar } from './components/NavigationBar'
 import { ViewRouter } from './components/ViewRouter'
 
 export const AppUI: Component = () => {
-  return (
-    <div id="appUI" class="flex flex-col">
-    </div>
-  )
+  return <div id="appUI" class="flex flex-col" />
 }

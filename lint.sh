@@ -13,8 +13,8 @@ pnpm eslint-check
 # pnpm stylefmt --recursive '**/*.css'
 
 # ruff
-uv run ruff check --fix .
-uv run ruff format .
+#uv run ruff check --fix .
+#uv run ruff format .
 
 # nginx
 #find . -type f -name '*.conf' -path '*/nginx*' -exec nginxfmt -v {} +;
