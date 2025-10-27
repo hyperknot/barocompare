@@ -293,7 +293,7 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
   })
 
   return (
-    <div class="w-full border rounded-lg p-4 bg-white shadow-sm">
+    <div class="w-full">
 
       <Show when={calibrationInfo()}>
         <CalibrationInfoPanel info={calibrationInfo()!} />

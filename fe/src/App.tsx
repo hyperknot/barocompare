@@ -55,14 +55,12 @@ export const AppUI: Component = () => {
   return (
     <div
       id="appUI"
-      class="flex flex-col min-h-screen bg-gray-50"
+      class="flex flex-col min-h-screen"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
       <div class="p-4 space-y-4 max-w-7xl mx-auto w-full">
-        <h1 class="text-2xl font-bold mb-4">IGC Flight Comparison</h1>
-
         <DropZone isDragging={isDragging()} hasFiles={hasFiles()} />
 
         <Show when={error()}>
