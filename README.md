@@ -1,32 +1,41 @@
 # barocompare
 
-**Analyse two IGC tracks from two instruments used on the same flight.**
+> Analyze and compare IGC tracks from two instruments used on the same flight
 
-Compares GPS1, GPS2, Baro1, Baro2 altitude sensors.
+## Overview
 
-Baro sensors are calibrated to GPS altitude using the first 60 seconds.
+**barocompare** helps you compare altitude data from different sensors:
 
-Website:
+- **GPS1** vs **GPS2** altitude
+- **Baro1** vs **Baro2** altitude
+
+Barometric sensors are automatically calibrated to GPS altitude using the first 60 seconds of flight data.
+
+## Live Website
 
 **[barocompare.hyperknot.com](https://barocompare.hyperknot.com)**
 
 ![screenshot](screenshot.png)
 
----
-
 ## Local Development
 
-```bash
-cd fe
-pnpm install
-pnpm dev
-```
+1. Navigate to the frontend directory:
+   ```bash
+   cd fe
+   ```
 
-Open the URL shown in your terminal to start developing.
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
 
----
+3. Start the development server:
+   ```bash
+   pnpm dev
+   ```
+
+4. Open the URL shown in your terminal to start developing.
 
 ## License
 
-MIT
-
+MIT License - see [LICENSE](LICENSE) file for details.
