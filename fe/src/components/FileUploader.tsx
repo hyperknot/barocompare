@@ -1,11 +1,11 @@
 import type { Component } from 'solid-js'
-import type { IGCData } from '../types/igc'
-import IGCParser from 'igc-parser'
+import type IGCParser from 'igc-parser'
+import IGCParserLib from 'igc-parser'
 
 interface FileUploaderProps {
   label: string
-  data: IGCData | null
-  onDataLoaded: (data: IGCData) => void
+  data: IGCParser.IGCFile | null
+  onDataLoaded: (data: IGCParser.IGCFile) => void
   onError: (error: string) => void
 }
 
@@ -18,7 +18,7 @@ export const FileUploader: Component<FileUploaderProps> = (props) => {
 
     try {
       const text = await file.text()
-      const parsed = IGCParser.parse(text, { lenient: true })
+      const parsed = IGCParserLib.parse(text, { lenient: true })
       props.onDataLoaded(parsed)
       props.onError('')
     } catch (err) {

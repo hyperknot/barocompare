@@ -1,11 +1,11 @@
 import type { Component } from 'solid-js'
 import { createEffect, createSignal, onMount, onCleanup } from 'solid-js'
-import type { IGCData } from '../types/igc'
+import type IGCParser from 'igc-parser'
 import * as echarts from 'echarts'
 
 interface AltitudeChartProps {
-  file1Data: IGCData | null
-  file2Data: IGCData | null
+  file1Data: IGCParser.IGCFile | null
+  file2Data: IGCParser.IGCFile | null
 }
 
 export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
@@ -131,7 +131,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
       },
       xAxis: {
         type: 'time',
-        boundaryGap: false,
         axisLabel: {
           formatter: (value: number) => {
             const date = new Date(value)

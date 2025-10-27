@@ -2,11 +2,11 @@ import type { Component } from 'solid-js'
 import { createSignal, Show } from 'solid-js'
 import { FileUploader } from './components/FileUploader'
 import { AltitudeChart } from './components/AltitudeChart'
-import type { IGCData } from './types/igc'
+import type IGCParser from 'igc-parser'
 
 export const AppUI: Component = () => {
-  const [file1Data, setFile1Data] = createSignal<IGCData | null>(null)
-  const [file2Data, setFile2Data] = createSignal<IGCData | null>(null)
+  const [file1Data, setFile1Data] = createSignal<IGCParser.IGCFile | null>(null)
+  const [file2Data, setFile2Data] = createSignal<IGCParser.IGCFile | null>(null)
   const [error, setError] = createSignal<string>('')
 
   return (
