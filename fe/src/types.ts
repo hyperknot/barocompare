@@ -16,7 +16,6 @@ export interface CalibrationInfo {
   baro1Offset: number
   baro2Offset: number
   pointsUsed: number
-  referenceAltitude: number
   baroAnalytics: BaroAnalytics
   gpsAnalytics: GPSAnalytics
 }

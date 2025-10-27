@@ -57,16 +57,14 @@ function findSharedSeconds(maps: DataMaps): number[] {
 function calculateOffsets(
   calibrationPoints: number[],
   maps: DataMaps
-): { baro1Offset: number; baro2Offset: number; referenceAltitude: number } {
+): { baro1Offset: number; baro2Offset: number } {
   const baro1Diffs: number[] = []
   const baro2Diffs: number[] = []
-  let sumGpsAvg = 0
 
   for (const second of calibrationPoints) {
     const gps1 = maps.file1GpsMap.get(second)!
     const gps2 = maps.file2GpsMap.get(second)!
     const avgGps = (gps1 + gps2) / 2
-    sumGpsAvg += avgGps
 
     const baro1 = maps.file1BaroMap.get(second)!
     const baro2 = maps.file2BaroMap.get(second)!
@@ -77,9 +75,8 @@ function calculateOffsets(
 
   const baro1Offset = baro1Diffs.reduce((acc, val) => acc + val, 0) / baro1Diffs.length
   const baro2Offset = baro2Diffs.reduce((acc, val) => acc + val, 0) / baro2Diffs.length
-  const referenceAltitude = sumGpsAvg / calibrationPoints.length
 
-  return { baro1Offset, baro2Offset, referenceAltitude }
+  return { baro1Offset, baro2Offset }
 }
 
 function calculateBaroAnalytics(
@@ -181,7 +178,6 @@ export function calculateBaroCalibration(
       baro1Offset: 0,
       baro2Offset: 0,
       pointsUsed: 0,
-      referenceAltitude: 0,
       baroAnalytics: {
         meanDifference: 0,
         maxDifference: 0,
@@ -197,7 +193,7 @@ export function calculateBaroCalibration(
 
   // Use first 60 seconds for calibration
   const calibrationPoints = sharedSeconds.slice(0, 60)
-  const { baro1Offset, baro2Offset, referenceAltitude } = calculateOffsets(calibrationPoints, maps)
+  const { baro1Offset, baro2Offset } = calculateOffsets(calibrationPoints, maps)
 
   // Calculate baro analytics using all shared points
   const baroAnalytics = calculateBaroAnalytics(sharedSeconds, maps, baro1Offset, baro2Offset)
@@ -209,7 +205,6 @@ export function calculateBaroCalibration(
     baro1Offset,
     baro2Offset,
     pointsUsed: calibrationPoints.length,
-    referenceAltitude,
     baroAnalytics,
     gpsAnalytics
   }

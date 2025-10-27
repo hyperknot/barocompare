@@ -294,11 +294,12 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
   return (
     <div class="w-full border rounded-lg p-4 bg-white shadow-sm">
-      <FileInfoPanel file1Data={props.file1Data} file2Data={props.file2Data} />
 
       <Show when={calibrationInfo()}>
         <CalibrationInfoPanel info={calibrationInfo()!} />
       </Show>
+
+      <FileInfoPanel file1Data={props.file1Data} file2Data={props.file2Data} />
 
       <div
         ref={chartRef}

@@ -7,10 +7,10 @@ interface CalibrationInfoProps {
 
 export const CalibrationInfoPanel: Component<CalibrationInfoProps> = (props) => {
   return (
-    <div class="mb-4 space-y-4">
+    <div class="mb-4 flex gap-4">
 
       {/* Barometric Sensors Comparison */}
-      <div class="p-4 bg-gray-50 border border-gray-200 rounded">
+      <div class="flex-1 p-4 bg-gray-50 border border-gray-200 rounded">
         <h3 class="font-semibold text-gray-900 mb-3">Calibrated Baro1 vs Baro2 Difference</h3>
         <div class="text-sm space-y-1.5">
           <div class="flex justify-between">
@@ -29,7 +29,7 @@ export const CalibrationInfoPanel: Component<CalibrationInfoProps> = (props) => 
       </div>
 
       {/* GPS Comparison */}
-      <div class="p-4 bg-gray-50 border border-gray-200 rounded">
+      <div class="flex-1 p-4 bg-gray-50 border border-gray-200 rounded">
         <h3 class="font-semibold text-gray-900 mb-3">GPS1 vs GPS2 Difference</h3>
         <div class="text-sm space-y-1.5">
           <div class="flex justify-between">
