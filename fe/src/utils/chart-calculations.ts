@@ -62,31 +62,6 @@ function findSharedSeconds(maps: DataMaps): Array<number> {
   return sharedSeconds.sort((a, b) => a - b)
 }
 
-function calculateOffsets(
-  calibrationPoints: Array<number>,
-  maps: DataMaps,
-): { baro1Offset: number; baro2Offset: number } {
-  const baro1Diffs: Array<number> = []
-  const baro2Diffs: Array<number> = []
-
-  for (const second of calibrationPoints) {
-    const gps1 = maps.file1GpsMap.get(second)!
-    const gps2 = maps.file2GpsMap.get(second)!
-    const avgGps = (gps1 + gps2) / 2
-
-    const baro1 = maps.file1BaroMap.get(second)!
-    const baro2 = maps.file2BaroMap.get(second)!
-
-    baro1Diffs.push(avgGps - baro1)
-    baro2Diffs.push(avgGps - baro2)
-  }
-
-  const baro1Offset = baro1Diffs.reduce((acc, val) => acc + val, 0) / baro1Diffs.length
-  const baro2Offset = baro2Diffs.reduce((acc, val) => acc + val, 0) / baro2Diffs.length
-
-  return { baro1Offset, baro2Offset }
-}
-
 function calculateBaroAnalytics(
   allSharedSeconds: Array<number>,
   maps: DataMaps,
@@ -169,60 +144,11 @@ export function calculateBaroCalibration(
   file2: IGCFileWithMetadata,
   options?: BaroCalibrationOptions,
 ): CalibrationInfo {
-  if (!options) {
-    const maps = createDataMaps(file1, file2)
-    const sharedSeconds = findSharedSeconds(maps)
-
-    if (sharedSeconds.length === 0) {
-      return {
-        baro1Offset: 0,
-        baro2Offset: 0,
-        pointsUsed: 0,
-        baroAnalytics: {
-          meanDifference: 0,
-          maxDifference: 0,
-          percentile95: 0,
-        },
-        gpsAnalytics: {
-          meanDifference: 0,
-          maxDifference: 0,
-          percentile95: 0,
-        },
-      }
-    }
-
-    const calibrationPoints = sharedSeconds.slice(0, 60)
-    const { baro1Offset, baro2Offset } = calculateOffsets(calibrationPoints, maps)
-
-    const calibrate1 = (h: number) => h + baro1Offset
-    const calibrate2 = (h: number) => h + baro2Offset
-    const baroAnalytics = calculateBaroAnalytics(sharedSeconds, maps, calibrate1, calibrate2)
-    const gpsAnalytics = calculateGPSAnalytics(sharedSeconds, maps.file1GpsMap, maps.file2GpsMap)
-
-    return {
-      baro1Offset,
-      baro2Offset,
-      pointsUsed: calibrationPoints.length,
-      baroAnalytics,
-      gpsAnalytics,
-    }
-  }
-
-  return calculateBaroCalibrationAdvanced(file1, file2, options)
-}
-
-export function calculateBaroCalibrationAdvanced(
-  file1: IGCFileWithMetadata,
-  file2: IGCFileWithMetadata,
-  options?: BaroCalibrationOptions,
-): CalibrationInfo {
   const maps = createDataMaps(file1, file2)
   const sharedSeconds = findSharedSeconds(maps)
 
   if (sharedSeconds.length === 0) {
     return {
-      baro1Offset: 0,
-      baro2Offset: 0,
       pointsUsed: 0,
       baroAnalytics: {
         meanDifference: 0,
@@ -251,12 +177,12 @@ export function calculateBaroCalibrationAdvanced(
     refAlt.set(s, r)
   }
 
-  // Determine which seconds to use for calibration (no vertical speed filtering)
+  // Determine which seconds to use for calibration
   const secondsForCalib = useAllShared
     ? [...sharedSeconds]
     : sharedSeconds.slice(0, calibrationSeconds)
 
-  // Build calibration pairs
+  // Build calibration pairs for both sensors
   const buildPairs = (sensor: 1 | 2, secs: Array<number>) => {
     const baroMap = sensor === 1 ? maps.file1BaroMap : maps.file2BaroMap
     const hRaw: Array<number> = []
@@ -283,22 +209,17 @@ export function calculateBaroCalibrationAdvanced(
   const pointsUsed = Math.min(calibrator1.pointsUsed, calibrator2.pointsUsed)
 
   return {
-    baro1Offset: calibrator1.offsetAtMean ?? 0,
-    baro2Offset: calibrator2.offsetAtMean ?? 0,
-
-    // Altitude domain internal params
+    // Altitude domain params (only if defined)
     baro1Slope: calibrator1.altitudeSlope,
     baro2Slope: calibrator2.altitudeSlope,
-    baro1Intercept: calibrator1.altitudeIntercept,
-    baro2Intercept: calibrator2.altitudeIntercept,
+    baro1Offset: calibrator1.altitudeOffset,
+    baro2Offset: calibrator2.altitudeOffset,
 
-    // Pressure domain internal params
+    // Pressure domain params (only if defined)
     baro1PressureSlope: calibrator1.pressureSlope,
     baro2PressureSlope: calibrator2.pressureSlope,
-    baro1PressureOffsetPa: calibrator1.pressureOffsetPa,
-    baro2PressureOffsetPa: calibrator2.pressureOffsetPa,
-    baro1PressureScale: calibrator1.pressureScale,
-    baro2PressureScale: calibrator2.pressureScale,
+    baro1PressureOffsetPa: calibrator1.pressureOffset,
+    baro2PressureOffsetPa: calibrator2.pressureOffset,
 
     pointsUsed,
     baroAnalytics,

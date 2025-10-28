@@ -45,14 +45,6 @@ export function altitudeFromPressureISA(p: number, p0 = ISA.p0, t0 = ISA.t0, L =
   return (t0 / L) * (1 - r ** (1 / nExp))
 }
 
-// Numerical derivative d(alt)/d(p) by central difference (not used directly here but kept for completeness)
-function dAlt_dP(p: number, p0 = ISA.p0, t0 = ISA.t0, L = ISA.L): number {
-  const dp = Math.max(0.1, Math.abs(p) * 1e-6)
-  const ap = altitudeFromPressureISA(p + dp, p0, t0, L)
-  const am = altitudeFromPressureISA(p - dp, p0, t0, L)
-  return (ap - am) / (2 * dp)
-}
-
 // Robust helpers
 function median(v: Array<number>): number {
   if (v.length === 0) return 0
@@ -115,16 +107,13 @@ function weightedLinearRegression(
 
 export interface Calibrator {
   fn: (hRaw: number) => number
-  describe: () => string
-  offsetAtMean?: number
   pointsUsed: number
 
   // Internal parameters (reporting)
   altitudeSlope?: number
   altitudeOffset?: number
   pressureSlope?: number
-  pressureOffsetPa?: number
-  pressureScale?: number
+  pressureOffset?: number
 }
 
 // Build a calibrator from raw altitude -> calibrated altitude, using the chosen method.
@@ -147,9 +136,7 @@ export function buildCalibrator(
   if (pairs.length === 0) {
     return {
       fn: (h) => h,
-      describe: () => 'identity (no data)',
       pointsUsed: 0,
-      offsetAtMean: 0,
     }
   }
 
@@ -165,10 +152,6 @@ export function buildCalibrator(
   }
 
   const n = pairs.length
-  const meanOffsetAt = (fn: (h: number) => number) => {
-    const diffs = pairs.map((p) => fn(p.h) - p.h)
-    return diffs.reduce((a, d) => a + d, 0) / (diffs.length || 1)
-  }
 
   if (method === '1pt-offset-alt') {
     const offsets = pairs.map((p) => p.href - p.h)
@@ -176,9 +159,7 @@ export function buildCalibrator(
     const fn = (h: number) => h + off
     return {
       fn,
-      describe: () => `offset-alt-1pt: +${off.toFixed(2)} m`,
       pointsUsed: n,
-      offsetAtMean: meanOffsetAt(fn),
       altitudeSlope: 1,
       altitudeOffset: off,
     }
@@ -201,9 +182,7 @@ export function buildCalibrator(
     const fn = (h: number) => a * h + b
     return {
       fn,
-      describe: () => `linear-alt: a=${a.toFixed(6)}, b=${b.toFixed(2)}`,
       pointsUsed: n,
-      offsetAtMean: meanOffsetAt(fn),
       altitudeSlope: a,
       altitudeOffset: b,
     }
@@ -224,10 +203,8 @@ export function buildCalibrator(
       }
       return {
         fn,
-        describe: () => `offset-press: +${b.toFixed(1)} Pa`,
         pointsUsed: n,
-        offsetAtMean: meanOffsetAt(fn),
-        pressureOffsetPa: b,
+        pressureOffset: b,
       }
     }
 
@@ -242,10 +219,8 @@ export function buildCalibrator(
       }
       return {
         fn,
-        describe: () => `scale-press-1pt: s=${s.toFixed(8)}`,
         pointsUsed: n,
-        offsetAtMean: meanOffsetAt(fn),
-        pressureScale: s,
+        pressureSlope: s,
       }
     }
 
@@ -269,19 +244,15 @@ export function buildCalibrator(
     }
     return {
       fn,
-      describe: () => `linear-press: a=${a.toFixed(6)}, b=${b.toFixed(1)} Pa`,
       pointsUsed: n,
-      offsetAtMean: meanOffsetAt(fn),
       pressureSlope: a,
-      pressureOffsetPa: b,
+      pressureOffset: b,
     }
   }
 
   // Fallback
   return {
     fn: (h) => h,
-    describe: () => 'identity (fallback)',
     pointsUsed: pairs.length,
-    offsetAtMean: 0,
   }
 }
