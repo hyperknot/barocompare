@@ -1,6 +1,6 @@
 import * as echarts from 'echarts'
 import type { Component } from 'solid-js'
-import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js'
+import { createEffect, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
 import type { CalibrationInfo, IGCFileWithMetadata, TimeRange } from '../types'
 import { buildCalibrator, type CalibrationMethod } from '../utils/baro-calibration'
 import {
@@ -20,6 +20,11 @@ interface AltitudeChartProps {
 interface SeriesConfig {
   name: string
   color: string
+}
+
+interface HoverData {
+  timestamp: number
+  values: Array<{ name: string; value: number; color: string }>
 }
 
 const SERIES_CONFIGS: Record<string, SeriesConfig> = {
@@ -93,16 +98,17 @@ function createChartOption(
   return {
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'cross' },
-      formatter: (params: any) => {
-        if (!Array.isArray(params)) return ''
-        const timestamp = params[0].value[0]
-        const timeStr = new Date(timestamp).toLocaleTimeString()
-        let result = `<strong>${timeStr}</strong><br/>`
-        params.forEach((param: any) => {
-          result += `${param.marker} ${param.seriesName}: ${param.value[1].toFixed(0)} m<br/>`
-        })
-        return result
+      axisPointer: {
+        type: 'cross',
+        snap: true, // Helps snap to nearest data point
+      },
+      // Keep tooltip enabled but hide it by returning empty content
+      formatter: () => '',
+      // Make it completely invisible
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+      textStyle: {
+        color: 'transparent',
       },
     },
     legend: {
@@ -172,6 +178,7 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
   const [currentSeries, setCurrentSeries] = createSignal<Array<any>>([])
   const [fullTimeRange, setFullTimeRange] = createSignal<TimeRange | null>(null)
   const [selectedMethod, setSelectedMethod] = createSignal<CalibrationMethod>('linear-alt')
+  const [hoverData, setHoverData] = createSignal<HoverData | null>(null)
 
   const updateYAxisForCurrentZoom = (chartInstance: echarts.ECharts) => {
     const option = chartInstance.getOption() as any
@@ -232,6 +239,72 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
         }
       })
 
+      // Capture hover data for fixed display
+      chartInstance.on('updateAxisPointer', (event: any) => {
+        const axesInfo = event.axesInfo
+        const xAxisInfo = axesInfo[0]
+
+        if (xAxisInfo && xAxisInfo.value != null) {
+          const timestamp = xAxisInfo.value
+          const option = chartInstance.getOption() as any
+          const series = option.series || []
+
+          const values: Array<{ name: string; value: number; color: string }> = []
+          const dataMap: Record<string, number> = {}
+
+          series.forEach((s: any) => {
+            if (!s.data || !Array.isArray(s.data)) return
+
+            // Find the closest point to the hovered timestamp
+            let closestPoint: [number, number] | null = null
+            let minDiff = Number.POSITIVE_INFINITY
+
+            s.data.forEach((point: [number, number]) => {
+              const diff = Math.abs(point[0] - timestamp)
+              if (diff < minDiff) {
+                minDiff = diff
+                closestPoint = point
+              }
+            })
+
+            if (closestPoint && minDiff < 10000) {
+              // Within 10 seconds
+              const config = SERIES_CONFIGS[s.name as keyof typeof SERIES_CONFIGS]
+              values.push({
+                name: s.name,
+                value: closestPoint[1],
+                color: config?.color || '#666',
+              })
+              dataMap[s.name] = closestPoint[1]
+            }
+          })
+
+          // Calculate differences
+          if (dataMap.gps2 !== undefined && dataMap.gps1 !== undefined) {
+            values.push({
+              name: 'gps2 - gps1',
+              value: dataMap.gps2 - dataMap.gps1,
+              color: '#6b7280', // gray
+            })
+          }
+
+          if (dataMap.baro2 !== undefined && dataMap.baro1 !== undefined) {
+            values.push({
+              name: 'baro2 - baro1',
+              value: dataMap.baro2 - dataMap.baro1,
+              color: '#6b7280', // gray
+            })
+          }
+
+          setHoverData({ timestamp, values })
+        }
+      })
+
+      // Clear hover data when mouse leaves
+      chartInstance.getZr().on('mouseout', () => {
+        setHoverData(null)
+      })
+
       const handleResize = () => chartInstance.resize()
       window.addEventListener('resize', handleResize)
 
@@ -239,6 +312,7 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
         window.removeEventListener('resize', handleResize)
         chartInstance.off('dataZoom')
         chartInstance.off('restore')
+        chartInstance.off('updateAxisPointer')
         chartInstance.dispose()
       })
     }
@@ -369,7 +443,33 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
       <FileInfoPanel file1Data={props.file1Data} file2Data={props.file2Data} />
 
-      <div ref={chartRef} class="w-full" style={{ height: '600px' }} />
+      <div class="relative">
+        <div ref={chartRef} class="w-full" style={{ height: '600px' }} />
+
+        {/* Fixed hover info panel */}
+        <Show when={hoverData()}>
+          <div class="absolute top-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[200px]">
+            <div class="font-semibold text-sm mb-2 text-gray-700 dark:text-gray-300">
+              {new Date(hoverData()!.timestamp).toLocaleTimeString()}
+            </div>
+            <div class="space-y-1">
+              <For each={hoverData()!.values}>
+                {(item) => (
+                  <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full" style={{ background: item.color }} />
+                      <span class="text-gray-600 dark:text-gray-400">{item.name}:</span>
+                    </div>
+                    <span class="font-mono font-semibold text-gray-900 dark:text-gray-100">
+                      {item.value.toFixed(0)} m
+                    </span>
+                  </div>
+                )}
+              </For>
+            </div>
+          </div>
+        </Show>
+      </div>
     </div>
   )
 }
