@@ -13,8 +13,24 @@ export interface GPSAnalytics {
 }
 
 export interface CalibrationInfo {
+  // Mean correction in altitude space (m) over calibration set
   baro1Offset: number
   baro2Offset: number
+
+  // Altitude-domain linear params (when applicable)
+  baro1Slope?: number
+  baro2Slope?: number
+  baro1Intercept?: number
+  baro2Intercept?: number
+
+  // Pressure-domain params (when applicable)
+  baro1PressureSlope?: number
+  baro2PressureSlope?: number
+  baro1PressureOffsetPa?: number
+  baro2PressureOffsetPa?: number
+  baro1PressureScale?: number
+  baro2PressureScale?: number
+
   pointsUsed: number
   baroAnalytics: BaroAnalytics
   gpsAnalytics: GPSAnalytics

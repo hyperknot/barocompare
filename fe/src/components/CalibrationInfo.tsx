@@ -1,4 +1,5 @@
 import type { Component } from 'solid-js'
+import { Show } from 'solid-js'
 import type { CalibrationInfo } from '../types'
 import type { CalibrationMethod } from '../utils/baro-calibration'
 
@@ -9,32 +10,24 @@ interface CalibrationInfoProps {
 
 const METHOD_LABELS: Record<CalibrationMethod, string> = {
   'offset-alt-1pt': '1-Point Offset (Altitude)',
+  'offset-press': '1-Point Offset (Pressure)',
+  'scale-press-1pt': '1-Point Scale (Pressure)',
   'linear-alt': 'Linear Fit (Altitude)',
   'linear-press': 'Linear Fit (Pressure)',
-  'offset-press': '1-Point Offset (Pressure)',
-  'quadratic-alt': 'Quadratic Fit (Altitude)',
 }
 
 export const CalibrationInfoPanel: Component<CalibrationInfoProps> = (props) => {
-  const isMultiPoint = () => {
-    const method = props.method
-    return method === 'linear-alt' || method === 'linear-press' || method === 'quadratic-alt'
-  }
+  const isLinear = () => props.method === 'linear-alt' || props.method === 'linear-press'
+  const isOffset = () => props.method === 'offset-alt-1pt' || props.method === 'offset-press'
 
   return (
     <div class="mb-4 space-y-4">
-      {/* Current Method Info */}
+      {/* Current Method Info with Parameters */}
       <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div class="flex items-center justify-between">
+        <div class="flex items-start justify-between mb-3">
           <div>
-            <h3 class="font-semibold text-blue-900 mb-1">
-              Active Calibration: {METHOD_LABELS[props.method]}
-            </h3>
-            <p class="text-sm text-blue-700">
-              {isMultiPoint()
-                ? `Using ${props.info.pointsUsed} data points across entire flight`
-                : `Using ${props.info.pointsUsed} data points from first 60 seconds`}
-            </p>
+            <h3 class="font-semibold text-blue-900 mb-1">Active: {METHOD_LABELS[props.method]}</h3>
+            <p class="text-sm text-blue-700">Using {props.info.pointsUsed} data points</p>
           </div>
           <div class="text-right">
             <div class="text-sm text-blue-700">Mean correction</div>
@@ -45,6 +38,50 @@ export const CalibrationInfoPanel: Component<CalibrationInfoProps> = (props) => 
             <div class="font-semibold text-blue-900">
               Baro2: {props.info.baro2Offset >= 0 ? '+' : ''}
               {props.info.baro2Offset.toFixed(1)} m
+            </div>
+          </div>
+        </div>
+
+        {/* Calibration Parameters */}
+        <div class="pt-3 border-t border-blue-200">
+          <div class="text-sm font-semibold text-blue-900 mb-2">Calibration Parameters:</div>
+          <div class="grid grid-cols-2 gap-4">
+            {/* Baro1 Parameters */}
+            <div class="space-y-1">
+              <div class="text-xs font-semibold text-blue-800">Baro1:</div>
+              <Show when={isLinear()}>
+                <div class="text-xs text-blue-700">
+                  Slope: {props.info.baro1Slope?.toFixed(6) ?? 'N/A'}
+                </div>
+              </Show>
+              <div class="text-xs text-blue-700">
+                Offset: {props.info.baro1Offset >= 0 ? '+' : ''}
+                {props.info.baro1Offset.toFixed(2)} m
+              </div>
+              <Show when={props.info.baro1Intercept !== undefined}>
+                <div class="text-xs text-blue-700">
+                  Intercept: {props.info.baro1Intercept?.toFixed(2)} m
+                </div>
+              </Show>
+            </div>
+
+            {/* Baro2 Parameters */}
+            <div class="space-y-1">
+              <div class="text-xs font-semibold text-blue-800">Baro2:</div>
+              <Show when={isLinear()}>
+                <div class="text-xs text-blue-700">
+                  Slope: {props.info.baro2Slope?.toFixed(6) ?? 'N/A'}
+                </div>
+              </Show>
+              <div class="text-xs text-blue-700">
+                Offset: {props.info.baro2Offset >= 0 ? '+' : ''}
+                {props.info.baro2Offset.toFixed(2)} m
+              </div>
+              <Show when={props.info.baro2Intercept !== undefined}>
+                <div class="text-xs text-blue-700">
+                  Intercept: {props.info.baro2Intercept?.toFixed(2)} m
+                </div>
+              </Show>
             </div>
           </div>
         </div>

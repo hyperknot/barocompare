@@ -100,11 +100,9 @@ function createChartOption(
       trigger: 'axis',
       axisPointer: {
         type: 'cross',
-        snap: true, // Helps snap to nearest data point
+        snap: true,
       },
-      // Keep tooltip enabled but hide it by returning empty content
       formatter: () => '',
-      // Make it completely invisible
       backgroundColor: 'transparent',
       borderWidth: 0,
       textStyle: {
@@ -188,17 +186,14 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
     if (!dataZoom || !timeRange || series.length === 0) return
 
-    // Get current zoom range
     const start = dataZoom.start ?? 0
     const end = dataZoom.end ?? 100
     const totalRange = timeRange.end - timeRange.start
     const xMin = timeRange.start + (totalRange * start) / 100
     const xMax = timeRange.start + (totalRange * end) / 100
 
-    // Calculate Y range for visible data
     const yRange = calculateYRange(series, xMin, xMax)
 
-    // Update Y-axis with new range
     chartInstance.setOption(
       {
         yAxis: {
@@ -215,12 +210,10 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
       const chartInstance = echarts.init(chartRef)
       setChart(chartInstance)
 
-      // Listen to dataZoom events (handles slider, mouse wheel, and rectangle selection)
       chartInstance.on('dataZoom', () => {
         updateYAxisForCurrentZoom(chartInstance)
       })
 
-      // Listen to restore events (when user clicks "Reset Zoom")
       chartInstance.on('restore', () => {
         const series = currentSeries()
         const timeRange = fullTimeRange()
@@ -239,7 +232,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
         }
       })
 
-      // Capture hover data for fixed display
       chartInstance.on('updateAxisPointer', (event: any) => {
         const axesInfo = event.axesInfo
         const xAxisInfo = axesInfo[0]
@@ -255,7 +247,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
           series.forEach((s: any) => {
             if (!s.data || !Array.isArray(s.data)) return
 
-            // Find the closest point to the hovered timestamp
             let closestPoint: [number, number] | null = null
             let minDiff = Number.POSITIVE_INFINITY
 
@@ -268,7 +259,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
             })
 
             if (closestPoint && minDiff < 10000) {
-              // Within 10 seconds
               const config = SERIES_CONFIGS[s.name as keyof typeof SERIES_CONFIGS]
               values.push({
                 name: s.name,
@@ -279,12 +269,11 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
             }
           })
 
-          // Calculate differences
           if (dataMap.gps2 !== undefined && dataMap.gps1 !== undefined) {
             values.push({
               name: 'gps2 - gps1',
               value: dataMap.gps2 - dataMap.gps1,
-              color: '#6b7280', // gray
+              color: '#6b7280',
             })
           }
 
@@ -292,7 +281,7 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
             values.push({
               name: 'baro2 - baro1',
               value: dataMap.baro2 - dataMap.baro1,
-              color: '#6b7280', // gray
+              color: '#6b7280',
             })
           }
 
@@ -300,7 +289,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
         }
       })
 
-      // Clear hover data when mouse leaves
       chartInstance.getZr().on('mouseout', () => {
         setHoverData(null)
       })
@@ -339,11 +327,8 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
     let calibration: CalibrationInfo | null = null
     let timeRange: TimeRange | null = null
 
-    // Calculate calibration and time range if both files are present
     if (file1 && file2 && file1.fixes.length > 0 && file2.fixes.length > 0) {
-      // Determine if multi-point or single-point
-      const useAllShared =
-        method === 'linear-alt' || method === 'linear-press' || method === 'quadratic-alt'
+      const useAllShared = method === 'linear-alt' || method === 'linear-press'
 
       calibration = calculateBaroCalibration(file1, file2, {
         method,
@@ -351,7 +336,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
         useAllShared,
         calibrationSeconds: 60,
         robust: true,
-        verticalSpeedLimit: method.startsWith('linear') || method === 'quadratic-alt' ? 10 : null,
       })
 
       setCalibrationInfo(calibration)
@@ -407,7 +391,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
     const series: Array<any> = []
 
-    // Add all series
     if (file1 && file1.fixes.length > 0) {
       series.push(createSeries(file1, 'gps1', null, timeRangeFilter))
       series.push(createSeries(file1, 'baro1', calibrateBaro1(), timeRangeFilter))
@@ -418,11 +401,9 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
       series.push(createSeries(file2, 'baro2', calibrateBaro2(), timeRangeFilter))
     }
 
-    // Store series and time range for zoom calculations
     setCurrentSeries(series)
     setFullTimeRange(timeRange)
 
-    // Calculate initial Y range for full data
     const initialYRange = timeRange
       ? calculateYRange(series, timeRange.start, timeRange.end)
       : { min: undefined, max: undefined }
@@ -446,7 +427,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
       <div class="relative">
         <div ref={chartRef} class="w-full" style={{ height: '600px' }} />
 
-        {/* Fixed hover info panel */}
         <Show when={hoverData()}>
           <div class="absolute top-4 right-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 min-w-[200px]">
             <div class="font-semibold text-sm mb-2 text-gray-700 dark:text-gray-300">
@@ -474,7 +454,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
   )
 }
 
-// Helper functions for local data processing
 function createDataMapsLocal(file1: IGCFileWithMetadata, file2: IGCFileWithMetadata) {
   const maps = {
     file1BaroMap: new Map<number, number>(),

@@ -114,13 +114,8 @@ function calculateBaroAnalytics(
     }
   }
 
-  // Mean difference
   const meanDifference = differences.reduce((a, b) => a + b, 0) / differences.length
-
-  // Max absolute difference
   const maxDifference = Math.max(...differences.map(Math.abs))
-
-  // 95th percentile of absolute differences
   const sortedAbsDifferences = differences.map(Math.abs).sort((a, b) => a - b)
   const p95Index = Math.floor(sortedAbsDifferences.length * 0.95)
   const percentile95 = sortedAbsDifferences[p95Index] || 0
@@ -156,13 +151,8 @@ function calculateGPSAnalytics(
     }
   }
 
-  // Mean difference
   const meanDifference = differences.reduce((a, b) => a + b, 0) / differences.length
-
-  // Max absolute difference
   const maxDifference = Math.max(...differences.map(Math.abs))
-
-  // 95th percentile of absolute differences
   const sortedAbsDifferences = differences.map(Math.abs).sort((a, b) => a - b)
   const p95Index = Math.floor(sortedAbsDifferences.length * 0.95)
   const percentile95 = sortedAbsDifferences[p95Index] || 0
@@ -174,8 +164,6 @@ function calculateGPSAnalytics(
   }
 }
 
-// Legacy: default behavior (offset-only with first 60 seconds), kept for backwards compatibility.
-// You can now pass an optional 'options' parameter to use advanced methods (see below).
 export function calculateBaroCalibration(
   file1: IGCFileWithMetadata,
   file2: IGCFileWithMetadata,
@@ -203,16 +191,12 @@ export function calculateBaroCalibration(
       }
     }
 
-    // Use first 60 seconds for calibration
     const calibrationPoints = sharedSeconds.slice(0, 60)
     const { baro1Offset, baro2Offset } = calculateOffsets(calibrationPoints, maps)
 
-    // Calculate baro analytics using all shared points with offset-only calibration
     const calibrate1 = (h: number) => h + baro1Offset
     const calibrate2 = (h: number) => h + baro2Offset
     const baroAnalytics = calculateBaroAnalytics(sharedSeconds, maps, calibrate1, calibrate2)
-
-    // Calculate GPS1 vs GPS2 analytics using all shared points
     const gpsAnalytics = calculateGPSAnalytics(sharedSeconds, maps.file1GpsMap, maps.file2GpsMap)
 
     return {
@@ -224,11 +208,9 @@ export function calculateBaroCalibration(
     }
   }
 
-  // Advanced path using options
   return calculateBaroCalibrationAdvanced(file1, file2, options)
 }
 
-// Advanced calibration: multi-method, robust, pressure/altitude space, multi-point.
 export function calculateBaroCalibrationAdvanced(
   file1: IGCFileWithMetadata,
   file2: IGCFileWithMetadata,
@@ -259,7 +241,6 @@ export function calculateBaroCalibrationAdvanced(
   const referenceMode = options?.referenceMode ?? 'avg-gps'
   const useAllShared = options?.useAllShared ?? true
   const calibrationSeconds = options?.calibrationSeconds ?? 60
-  const vsLimit = options?.verticalSpeedLimit ?? null
 
   // Build reference altitude per second
   const refAlt = new Map<number, number>()
@@ -270,43 +251,12 @@ export function calculateBaroCalibrationAdvanced(
     refAlt.set(s, r)
   }
 
-  // Compute reference vertical speed (central difference), if needed
-  let secondsForCalib = [...sharedSeconds]
-  if (!useAllShared) {
-    secondsForCalib = sharedSeconds.slice(0, calibrationSeconds)
-  }
+  // Determine which seconds to use for calibration (no vertical speed filtering)
+  const secondsForCalib = useAllShared
+    ? [...sharedSeconds]
+    : sharedSeconds.slice(0, calibrationSeconds)
 
-  const computeVs = (secs: Array<number>): Array<number> => {
-    if (secs.length === 0) return []
-    const vs: Array<number> = Array(secs.length).fill(0)
-    for (let i = 0; i < secs.length; i++) {
-      if (i === 0) {
-        const dt = secs[1] - secs[0] || 1
-        vs[i] = (refAlt.get(secs[1])! - refAlt.get(secs[0])!) / dt
-      } else if (i === secs.length - 1) {
-        const dt = secs[i] - secs[i - 1] || 1
-        vs[i] = (refAlt.get(secs[i])! - refAlt.get(secs[i - 1])!) / dt
-      } else {
-        const dt = secs[i + 1] - secs[i - 1] || 2
-        vs[i] = (refAlt.get(secs[i + 1])! - refAlt.get(secs[i - 1])!) / dt
-      }
-    }
-    return vs
-  }
-
-  const vsAll = computeVs(secondsForCalib)
-  const filterByVs = (secs: Array<number>, vs: Array<number>): Array<number> => {
-    if (vsLimit === null) return secs
-    const kept: Array<number> = []
-    for (let i = 0; i < secs.length; i++) {
-      if (Math.abs(vs[i]) <= vsLimit) kept.push(secs[i])
-    }
-    return kept
-  }
-
-  const calibSeconds = filterByVs(secondsForCalib, vsAll)
-
-  // Build calibration pairs for each sensor
+  // Build calibration pairs
   const buildPairs = (sensor: 1 | 2, secs: Array<number>) => {
     const baroMap = sensor === 1 ? maps.file1BaroMap : maps.file2BaroMap
     const hRaw: Array<number> = []
@@ -322,26 +272,34 @@ export function calculateBaroCalibrationAdvanced(
     return { hRaw, hRef }
   }
 
-  const pairs1 = buildPairs(1, calibSeconds)
-  const pairs2 = buildPairs(2, calibSeconds)
+  const pairs1 = buildPairs(1, secondsForCalib)
+  const pairs2 = buildPairs(2, secondsForCalib)
 
   const calibrator1 = buildCalibrator(pairs1.hRaw, pairs1.hRef, options)
   const calibrator2 = buildCalibrator(pairs2.hRaw, pairs2.hRef, options)
 
-  // Baro analytics across all shared seconds
   const baroAnalytics = calculateBaroAnalytics(sharedSeconds, maps, calibrator1.fn, calibrator2.fn)
-
-  // GPS analytics unchanged
   const gpsAnalytics = calculateGPSAnalytics(sharedSeconds, maps.file1GpsMap, maps.file2GpsMap)
-
-  // For backward compatibility, report "offset" fields as the mean correction over calibration set
-  const baro1Offset = calibrator1.offsetAtMean ?? 0
-  const baro2Offset = calibrator2.offsetAtMean ?? 0
   const pointsUsed = Math.min(calibrator1.pointsUsed, calibrator2.pointsUsed)
 
   return {
-    baro1Offset,
-    baro2Offset,
+    baro1Offset: calibrator1.offsetAtMean ?? 0,
+    baro2Offset: calibrator2.offsetAtMean ?? 0,
+
+    // Altitude domain internal params
+    baro1Slope: calibrator1.altitudeSlope,
+    baro2Slope: calibrator2.altitudeSlope,
+    baro1Intercept: calibrator1.altitudeIntercept,
+    baro2Intercept: calibrator2.altitudeIntercept,
+
+    // Pressure domain internal params
+    baro1PressureSlope: calibrator1.pressureSlope,
+    baro2PressureSlope: calibrator2.pressureSlope,
+    baro1PressureOffsetPa: calibrator1.pressureOffsetPa,
+    baro2PressureOffsetPa: calibrator2.pressureOffsetPa,
+    baro1PressureScale: calibrator1.pressureScale,
+    baro2PressureScale: calibrator2.pressureScale,
+
     pointsUsed,
     baroAnalytics,
     gpsAnalytics,

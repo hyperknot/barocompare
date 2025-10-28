@@ -10,36 +10,33 @@ interface CalibrationOption {
 }
 
 const CALIBRATION_OPTIONS: Array<CalibrationOption> = [
+  // 1-point methods first
   {
     method: 'offset-alt-1pt',
-    label: '1-Point Offset (Altitude)',
-    description:
-      'Simple constant offset using first 60 seconds. Best when you only have ground-level reference. Cannot correct scale errors.',
+    label: '1-Point Offset (Alt)',
+    description: 'Constant offset using early flight data',
   },
   {
+    method: 'offset-press',
+    label: '1-Point Offset (Press)',
+    description: 'Constant offset in pressure space (Pa)',
+  },
+  {
+    method: 'scale-press-1pt',
+    label: '1-Point Scale (Press)',
+    description: 'Constant scale factor in pressure space',
+  },
+  // Linear (multi-point) methods second
+  {
     method: 'linear-alt',
-    label: 'Linear Fit (Altitude)',
-    description:
-      'Fits scale + offset across entire flight using GPS altitude as reference. Corrects both offset and scale errors in altitude space.',
+    label: 'Linear Fit (Alt)',
+    description: 'Fits scale + offset across entire flight',
     recommended: true,
   },
   {
     method: 'linear-press',
-    label: 'Linear Fit (Pressure)',
-    description:
-      'Fits scale + offset in pressure domain, then converts to altitude. Most physically accurate as sensors measure pressure. Best for wide altitude ranges.',
-  },
-  {
-    method: 'offset-press',
-    label: '1-Point Offset (Pressure)',
-    description:
-      'Constant offset in pressure space using first 60 seconds. Like QNH adjustment. Cannot correct scale errors.',
-  },
-  {
-    method: 'quadratic-alt',
-    label: 'Quadratic Fit (Altitude)',
-    description:
-      'Adds curvature correction on top of linear fit. Rarely needed; use only if linear methods show systematic residuals.',
+    label: 'Linear Fit (Press)',
+    description: 'Fits in pressure domain (most accurate)',
   },
 ]
 
@@ -51,54 +48,41 @@ interface CalibrationSettingsProps {
 export const CalibrationSettings: Component<CalibrationSettingsProps> = (props) => {
   return (
     <div class="mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-      <h3 class="font-semibold text-gray-900 mb-3 text-lg">Calibration Method</h3>
-      <div class="space-y-3">
+      <h3 class="font-semibold text-gray-900 mb-3">Calibration Method</h3>
+
+      <div class="flex flex-wrap gap-3 mb-4">
         <For each={CALIBRATION_OPTIONS}>
           {(option) => (
-            <label class="flex items-start cursor-pointer group">
+            <label
+              class="flex items-center gap-2 px-3 py-2 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-300"
+              classList={{
+                'border-blue-500 bg-blue-50': props.selectedMethod === option.method,
+                'border-gray-200': props.selectedMethod !== option.method,
+              }}
+            >
               <input
                 type="radio"
                 name="calibration-method"
                 value={option.method}
                 checked={props.selectedMethod === option.method}
                 onChange={() => props.onMethodChange(option.method)}
-                class="mt-1 h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                class="h-4 w-4 text-blue-600 cursor-pointer"
               />
-              <div class="ml-3 flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                    {option.label}
+              <div class="flex items-center gap-1.5">
+                <span class="font-medium text-sm whitespace-nowrap">{option.label}</span>
+                {option.recommended && (
+                  <span class="px-1.5 py-0.5 text-xs font-semibold text-blue-700 bg-blue-100 rounded">
+                    ★
                   </span>
-                  {option.recommended && (
-                    <span class="px-2 py-0.5 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">
-                      Recommended
-                    </span>
-                  )}
-                </div>
-                <p class="text-sm text-gray-600 mt-0.5">{option.description}</p>
+                )}
               </div>
             </label>
           )}
         </For>
       </div>
 
-      <div class="mt-4 pt-4 border-t border-gray-200">
-        <div class="text-sm text-gray-600 space-y-1">
-          <p>
-            <strong>All methods use GPS1+GPS2 average as reference.</strong>
-          </p>
-          <p>
-            • <strong>1-Point methods:</strong> Use first 60 seconds only (suitable for single
-            altitude)
-          </p>
-          <p>
-            • <strong>Multi-point methods:</strong> Use entire flight data (corrects scale errors)
-          </p>
-          <p>
-            • <strong>Robust fitting:</strong> Automatically filters outliers and reduces turbulence
-            effects
-          </p>
-        </div>
+      <div class="text-sm text-gray-600 mb-1 p-2 bg-gray-50 rounded">
+        {CALIBRATION_OPTIONS.find((opt) => opt.method === props.selectedMethod)?.description}
       </div>
     </div>
   )
