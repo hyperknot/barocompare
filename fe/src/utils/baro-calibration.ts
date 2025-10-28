@@ -1,9 +1,9 @@
 // Barometric calibration helpers: altitude/pressure conversions and fitting methods.
 
 export type CalibrationMethod =
-  | 'offset-alt-1pt' // h_cal = h_raw + const (median/mean offset in altitude)
-  | 'offset-press-1pt' // P_cal = P_raw + const (median pressure offset), then to altitude
-  | 'scale-press-1pt' // P_cal = s * P_raw (median scale), then to altitude
+  | '1pt-offset-alt' // h_cal = h_raw + const (median/mean offset in altitude)
+  | '1pt-offset-press' // P_cal = P_raw + const (median pressure offset), then to altitude
+  | '1pt-scale-press' // P_cal = s * P_raw (median scale), then to altitude
   | 'linear-alt' // h_cal = a*h_raw + b  (robust linear fit)
   | 'linear-press' // P_cal = a*P_raw + b (robust linear in P), then to altitude
 
@@ -170,7 +170,7 @@ export function buildCalibrator(
     return diffs.reduce((a, d) => a + d, 0) / (diffs.length || 1)
   }
 
-  if (method === 'offset-alt-1pt') {
+  if (method === '1pt-offset-alt') {
     const offsets = pairs.map((p) => p.href - p.h)
     const off = median(offsets)
     const fn = (h: number) => h + off
@@ -209,11 +209,11 @@ export function buildCalibrator(
     }
   }
 
-  if (method === 'offset-press-1pt' || method === 'linear-press' || method === 'scale-press-1pt') {
+  if (method === '1pt-offset-press' || method === 'linear-press' || method === '1pt-scale-press') {
     const pRaw = pairs.map((p) => pressureFromAltitudeISA(p.h, p0, t0, L))
     const pRef = pairs.map((p) => pressureFromAltitudeISA(p.href, p0, t0, L))
 
-    if (method === 'offset-press-1pt') {
+    if (method === '1pt-offset-press') {
       const diffs = pRef.map((pr, i) => pr - pRaw[i])
       const b = median(diffs)
       const fn = (h: number) => {
@@ -231,7 +231,7 @@ export function buildCalibrator(
       }
     }
 
-    if (method === 'scale-press-1pt') {
+    if (method === '1pt-scale-press') {
       const ratios = pRef.map((pref, i) => pref / (pRaw[i] || 1))
       const s = median(ratios)
       const fn = (h: number) => {

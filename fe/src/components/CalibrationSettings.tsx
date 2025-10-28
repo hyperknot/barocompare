@@ -12,17 +12,17 @@ interface CalibrationOption {
 const CALIBRATION_OPTIONS: Array<CalibrationOption> = [
   // 1-point methods first
   {
-    method: 'offset-alt-1pt',
+    method: '1pt-offset-alt',
     label: '1-Point Offset (Alt)',
     description: 'Constant offset using early flight data',
   },
   {
-    method: 'offset-press-1pt',
+    method: '1pt-offset-press',
     label: '1-Point Offset (Press)',
     description: 'Constant offset in pressure space (Pa)',
   },
   {
-    method: 'scale-press-1pt',
+    method: '1pt-scale-press',
     label: '1-Point Scale (Press)',
     description: 'Constant scale factor in pressure space',
   },
