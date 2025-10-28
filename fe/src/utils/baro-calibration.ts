@@ -121,7 +121,7 @@ export interface Calibrator {
 
   // Internal parameters (reporting)
   altitudeSlope?: number
-  altitudeIntercept?: number
+  altitudeOffset?: number
   pressureSlope?: number
   pressureOffsetPa?: number
   pressureScale?: number
@@ -180,7 +180,7 @@ export function buildCalibrator(
       pointsUsed: n,
       offsetAtMean: meanOffsetAt(fn),
       altitudeSlope: 1,
-      altitudeIntercept: off,
+      altitudeOffset: off,
     }
   }
 
@@ -205,7 +205,7 @@ export function buildCalibrator(
       pointsUsed: n,
       offsetAtMean: meanOffsetAt(fn),
       altitudeSlope: a,
-      altitudeIntercept: b,
+      altitudeOffset: b,
     }
   }
 
