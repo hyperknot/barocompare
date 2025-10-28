@@ -14,29 +14,28 @@ const CALIBRATION_OPTIONS: Array<CalibrationOption> = [
   {
     method: '1pt-offset-alt',
     label: '1-Point Offset (Alt)',
-    description: 'Constant offset using early flight data',
+    description: 'Constant offset in altitude using first 60 sec',
   },
   {
     method: '1pt-offset-press',
     label: '1-Point Offset (Press)',
-    description: 'Constant offset in pressure space (Pa)',
+    description: 'Constant offset in pressure space (Pa) using first 60 sec',
   },
   {
     method: '1pt-scale-press',
     label: '1-Point Scale (Press)',
-    description: 'Constant scale factor in pressure space',
+    description: 'Constant scale factor in pressure space using first 60 sec',
   },
   // Linear (multi-point) methods second
   {
     method: 'linear-alt',
     label: 'Linear Fit (Alt)',
-    description: 'Fits scale + offset across entire flight',
-    recommended: true,
+    description: 'Fits altitude for scale + offset across entire flight',
   },
   {
     method: 'linear-press',
     label: 'Linear Fit (Press)',
-    description: 'Fits in pressure domain (most accurate)',
+    description: 'Fits in pressure space (Pa) using scale + offset across entire flight',
   },
 ]
 
