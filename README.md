@@ -9,8 +9,6 @@
 - **GPS1** vs **GPS2** altitude
 - **Baro1** vs **Baro2** altitude
 
-Barometric sensors are automatically calibrated to GPS altitude using the first 60 seconds of flight data.
-
 ## Live Website
 
 **[barocompare.hyperknot.com](https://barocompare.hyperknot.com)**
@@ -20,16 +18,19 @@ Barometric sensors are automatically calibrated to GPS altitude using the first 
 ## Local Development
 
 1. Install dependencies:
+
    ```bash
    pnpm i
    ```
 
 2. Navigate to the frontend directory:
+
    ```bash
    cd fe
    ```
 
 3. Start the development server:
+
    ```bash
    pnpm dev
    ```

@@ -2,7 +2,7 @@ import * as echarts from 'echarts'
 import type { Component } from 'solid-js'
 import { createEffect, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
 import type { CalibrationInfo, IGCFileWithMetadata, TimeRange } from '../types'
-import { buildCalibrator, type CalibrationMethod } from '../utils/baro-calibration'
+import type { CalibrationMethod } from '../utils/baro-calibration'
 import {
   calculateBaroCalibration,
   createTimeRangeFilter,
@@ -79,7 +79,6 @@ function calculateYRange(
     }
   })
 
-  // Add 5% padding to top and bottom
   const range = max - min
   const padding = range * 0.05
 
@@ -98,16 +97,11 @@ function createChartOption(
   return {
     tooltip: {
       trigger: 'axis',
-      axisPointer: {
-        type: 'cross',
-        snap: true,
-      },
+      axisPointer: { type: 'cross', snap: true },
       formatter: () => '',
       backgroundColor: 'transparent',
       borderWidth: 0,
-      textStyle: {
-        color: 'transparent',
-      },
+      textStyle: { color: 'transparent' },
     },
     legend: {
       data: series.map((s) => s.name),
@@ -171,8 +165,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
   let chartRef: HTMLDivElement | undefined
   const [chart, setChart] = createSignal<echarts.ECharts | null>(null)
   const [calibrationInfo, setCalibrationInfo] = createSignal<CalibrationInfo | null>(null)
-  const [calibrateBaro1, setCalibrateBaro1] = createSignal<((h: number) => number) | null>(null)
-  const [calibrateBaro2, setCalibrateBaro2] = createSignal<((h: number) => number) | null>(null)
   const [currentSeries, setCurrentSeries] = createSignal<Array<any>>([])
   const [fullTimeRange, setFullTimeRange] = createSignal<TimeRange | null>(null)
   const [selectedMethod, setSelectedMethod] = createSignal<CalibrationMethod>('linear-alt')
@@ -194,15 +186,7 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
     const yRange = calculateYRange(series, xMin, xMax)
 
-    chartInstance.setOption(
-      {
-        yAxis: {
-          min: yRange.min,
-          max: yRange.max,
-        },
-      },
-      false,
-    )
+    chartInstance.setOption({ yAxis: { min: yRange.min, max: yRange.max } }, false)
   }
 
   onMount(() => {
@@ -221,12 +205,7 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
         if (series.length > 0 && timeRange) {
           const initialYRange = calculateYRange(series, timeRange.start, timeRange.end)
           chartInstance.setOption(
-            {
-              yAxis: {
-                min: initialYRange.min,
-                max: initialYRange.max,
-              },
-            },
+            { yAxis: { min: initialYRange.min, max: initialYRange.max } },
             false,
           )
         }
@@ -317,8 +296,6 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
     if (!file1 && !file2) {
       chartInstance.clear()
       setCalibrationInfo(null)
-      setCalibrateBaro1(null)
-      setCalibrateBaro2(null)
       setCurrentSeries([])
       setFullTimeRange(null)
       return
@@ -340,51 +317,8 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
       setCalibrationInfo(calibration)
       timeRange = findCommonTimeRange(file1, file2)
-
-      const maps = createDataMapsLocal(file1, file2)
-      const sharedSeconds = findSharedSecondsLocal(maps)
-      const calibSeconds = useAllShared ? sharedSeconds : sharedSeconds.slice(0, 60)
-
-      const refAlt = new Map<number, number>()
-      for (const s of calibSeconds) {
-        const g1 = maps.file1GpsMap.get(s)!
-        const g2 = maps.file2GpsMap.get(s)!
-        refAlt.set(s, (g1 + g2) / 2)
-      }
-
-      const buildPairs = (sensor: 1 | 2) => {
-        const baroMap = sensor === 1 ? maps.file1BaroMap : maps.file2BaroMap
-        const hRaw: Array<number> = []
-        const hRef: Array<number> = []
-        for (const s of calibSeconds) {
-          const h = baroMap.get(s)
-          const r = refAlt.get(s)
-          if (h !== undefined && r !== undefined && Number.isFinite(h) && Number.isFinite(r)) {
-            hRaw.push(h)
-            hRef.push(r)
-          }
-        }
-        return { hRaw, hRef }
-      }
-
-      const pairs1 = buildPairs(1)
-      const pairs2 = buildPairs(2)
-
-      const calibrator1 = buildCalibrator(pairs1.hRaw, pairs1.hRef, {
-        method,
-        robust: true,
-      })
-      const calibrator2 = buildCalibrator(pairs2.hRaw, pairs2.hRef, {
-        method,
-        robust: true,
-      })
-
-      setCalibrateBaro1(() => calibrator1.fn)
-      setCalibrateBaro2(() => calibrator2.fn)
     } else {
       setCalibrationInfo(null)
-      setCalibrateBaro1(null)
-      setCalibrateBaro2(null)
     }
 
     const timeRangeFilter = createTimeRangeFilter(timeRange)
@@ -393,12 +327,16 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
 
     if (file1 && file1.fixes.length > 0) {
       series.push(createSeries(file1, 'gps1', null, timeRangeFilter))
-      series.push(createSeries(file1, 'baro1', calibrateBaro1(), timeRangeFilter))
+      series.push(
+        createSeries(file1, 'baro1', calibration?.calibrateBaro1 ?? null, timeRangeFilter),
+      )
     }
 
     if (file2 && file2.fixes.length > 0) {
       series.push(createSeries(file2, 'gps2', null, timeRangeFilter))
-      series.push(createSeries(file2, 'baro2', calibrateBaro2(), timeRangeFilter))
+      series.push(
+        createSeries(file2, 'baro2', calibration?.calibrateBaro2 ?? null, timeRangeFilter),
+      )
     }
 
     setCurrentSeries(series)
@@ -452,51 +390,4 @@ export const AltitudeChart: Component<AltitudeChartProps> = (props) => {
       </div>
     </div>
   )
-}
-
-function createDataMapsLocal(file1: IGCFileWithMetadata, file2: IGCFileWithMetadata) {
-  const maps = {
-    file1BaroMap: new Map<number, number>(),
-    file1GpsMap: new Map<number, number>(),
-    file2BaroMap: new Map<number, number>(),
-    file2GpsMap: new Map<number, number>(),
-  }
-
-  file1.fixes.forEach((fix) => {
-    const secondTimestamp = Math.floor(fix.timestamp / 1000)
-    if (fix.pressureAltitude !== null) {
-      maps.file1BaroMap.set(secondTimestamp, fix.pressureAltitude)
-    }
-    if (fix.gpsAltitude !== null) {
-      maps.file1GpsMap.set(secondTimestamp, fix.gpsAltitude)
-    }
-  })
-
-  file2.fixes.forEach((fix) => {
-    const secondTimestamp = Math.floor(fix.timestamp / 1000)
-    if (fix.pressureAltitude !== null) {
-      maps.file2BaroMap.set(secondTimestamp, fix.pressureAltitude)
-    }
-    if (fix.gpsAltitude !== null) {
-      maps.file2GpsMap.set(secondTimestamp, fix.gpsAltitude)
-    }
-  })
-
-  return maps
-}
-
-function findSharedSecondsLocal(maps: ReturnType<typeof createDataMapsLocal>): Array<number> {
-  const sharedSeconds: Array<number> = []
-
-  for (const [second] of maps.file1BaroMap) {
-    if (
-      maps.file1GpsMap.has(second) &&
-      maps.file2BaroMap.has(second) &&
-      maps.file2GpsMap.has(second)
-    ) {
-      sharedSeconds.push(second)
-    }
-  }
-
-  return sharedSeconds.sort((a, b) => a - b)
 }

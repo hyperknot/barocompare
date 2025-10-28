@@ -88,7 +88,7 @@ export const CalibrationInfoPanel: Component<CalibrationInfoProps> = (props) => 
   return (
     <div class="mb-4 space-y-4">
       {/* Calibration Parameters */}
-      <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg h-30">
         <div class="text-sm font-semibold text-blue-900 mb-2">Calibration Parameters:</div>
         <div class="grid grid-cols-2 gap-4">
           {/* Baro1 */}

@@ -80,10 +80,6 @@ export const AppUI: Component = () => {
                   <strong>Baro1</strong> vs <strong>Baro2</strong> altitude
                 </li>
               </ul>
-              <p class="mt-4">
-                Barometric sensors are automatically calibrated to GPS altitude using the first 60
-                seconds of flight data.
-              </p>
             </div>
 
             <div class="pt-4 border-t border-gray-200">

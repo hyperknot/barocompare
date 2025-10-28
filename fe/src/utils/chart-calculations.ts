@@ -62,80 +62,47 @@ function findSharedSeconds(maps: DataMaps): Array<number> {
   return sharedSeconds.sort((a, b) => a - b)
 }
 
-function calculateBaroAnalytics(
-  allSharedSeconds: Array<number>,
+function calculateAnalytics(
+  sharedSeconds: Array<number>,
   maps: DataMaps,
   calibrate1: (h: number) => number,
   calibrate2: (h: number) => number,
-): BaroAnalytics {
-  const differences: Array<number> = []
+): { baroAnalytics: BaroAnalytics; gpsAnalytics: GPSAnalytics } {
+  const baroDifferences: Array<number> = []
+  const gpsDifferences: Array<number> = []
 
-  for (const second of allSharedSeconds) {
+  for (const second of sharedSeconds) {
     const baro1 = maps.file1BaroMap.get(second)
     const baro2 = maps.file2BaroMap.get(second)
+    const gps1 = maps.file1GpsMap.get(second)
+    const gps2 = maps.file2GpsMap.get(second)
 
     if (baro1 !== undefined && baro2 !== undefined) {
       const calibratedBaro1 = calibrate1(baro1)
       const calibratedBaro2 = calibrate2(baro2)
-      differences.push(calibratedBaro1 - calibratedBaro2)
+      baroDifferences.push(calibratedBaro1 - calibratedBaro2)
     }
-  }
-
-  if (differences.length === 0) {
-    return {
-      meanDifference: 0,
-      maxDifference: 0,
-      percentile95: 0,
-    }
-  }
-
-  const meanDifference = differences.reduce((a, b) => a + b, 0) / differences.length
-  const maxDifference = Math.max(...differences.map(Math.abs))
-  const sortedAbsDifferences = differences.map(Math.abs).sort((a, b) => a - b)
-  const p95Index = Math.floor(sortedAbsDifferences.length * 0.95)
-  const percentile95 = sortedAbsDifferences[p95Index] || 0
-
-  return {
-    meanDifference,
-    maxDifference,
-    percentile95,
-  }
-}
-
-function calculateGPSAnalytics(
-  allSharedSeconds: Array<number>,
-  gps1Map: Map<number, number>,
-  gps2Map: Map<number, number>,
-): GPSAnalytics {
-  const differences: Array<number> = []
-
-  for (const second of allSharedSeconds) {
-    const gps1 = gps1Map.get(second)
-    const gps2 = gps2Map.get(second)
 
     if (gps1 !== undefined && gps2 !== undefined) {
-      differences.push(gps1 - gps2)
+      gpsDifferences.push(gps1 - gps2)
     }
   }
 
-  if (differences.length === 0) {
-    return {
-      meanDifference: 0,
-      maxDifference: 0,
-      percentile95: 0,
+  const computeStats = (differences: Array<number>) => {
+    if (differences.length === 0) {
+      return { meanDifference: 0, maxDifference: 0, percentile95: 0 }
     }
+    const meanDifference = differences.reduce((a, b) => a + b, 0) / differences.length
+    const maxDifference = Math.max(...differences.map(Math.abs))
+    const sortedAbsDifferences = differences.map(Math.abs).sort((a, b) => a - b)
+    const p95Index = Math.floor(sortedAbsDifferences.length * 0.95)
+    const percentile95 = sortedAbsDifferences[p95Index] || 0
+    return { meanDifference, maxDifference, percentile95 }
   }
-
-  const meanDifference = differences.reduce((a, b) => a + b, 0) / differences.length
-  const maxDifference = Math.max(...differences.map(Math.abs))
-  const sortedAbsDifferences = differences.map(Math.abs).sort((a, b) => a - b)
-  const p95Index = Math.floor(sortedAbsDifferences.length * 0.95)
-  const percentile95 = sortedAbsDifferences[p95Index] || 0
 
   return {
-    meanDifference,
-    maxDifference,
-    percentile95,
+    baroAnalytics: computeStats(baroDifferences),
+    gpsAnalytics: computeStats(gpsDifferences),
   }
 }
 
@@ -149,21 +116,14 @@ export function calculateBaroCalibration(
 
   if (sharedSeconds.length === 0) {
     return {
+      calibrateBaro1: (h) => h,
+      calibrateBaro2: (h) => h,
       pointsUsed: 0,
-      baroAnalytics: {
-        meanDifference: 0,
-        maxDifference: 0,
-        percentile95: 0,
-      },
-      gpsAnalytics: {
-        meanDifference: 0,
-        maxDifference: 0,
-        percentile95: 0,
-      },
+      baroAnalytics: { meanDifference: 0, maxDifference: 0, percentile95: 0 },
+      gpsAnalytics: { meanDifference: 0, maxDifference: 0, percentile95: 0 },
     }
   }
 
-  const method = options?.method ?? 'linear-alt'
   const referenceMode = options?.referenceMode ?? 'avg-gps'
   const useAllShared = options?.useAllShared ?? true
   const calibrationSeconds = options?.calibrationSeconds ?? 60
@@ -182,9 +142,8 @@ export function calculateBaroCalibration(
     ? [...sharedSeconds]
     : sharedSeconds.slice(0, calibrationSeconds)
 
-  // Build calibration pairs for both sensors
-  const buildPairs = (sensor: 1 | 2, secs: Array<number>) => {
-    const baroMap = sensor === 1 ? maps.file1BaroMap : maps.file2BaroMap
+  // Build calibration pairs
+  const buildPairs = (baroMap: Map<number, number>, secs: Array<number>) => {
     const hRaw: Array<number> = []
     const hRef: Array<number> = []
     for (const s of secs) {
@@ -198,47 +157,47 @@ export function calculateBaroCalibration(
     return { hRaw, hRef }
   }
 
-  const pairs1 = buildPairs(1, secondsForCalib)
-  const pairs2 = buildPairs(2, secondsForCalib)
+  const pairs1 = buildPairs(maps.file1BaroMap, secondsForCalib)
+  const pairs2 = buildPairs(maps.file2BaroMap, secondsForCalib)
 
   const calibrator1 = buildCalibrator(pairs1.hRaw, pairs1.hRef, options)
   const calibrator2 = buildCalibrator(pairs2.hRaw, pairs2.hRef, options)
 
-  const baroAnalytics = calculateBaroAnalytics(sharedSeconds, maps, calibrator1.fn, calibrator2.fn)
-  const gpsAnalytics = calculateGPSAnalytics(sharedSeconds, maps.file1GpsMap, maps.file2GpsMap)
-  const pointsUsed = Math.min(calibrator1.pointsUsed, calibrator2.pointsUsed)
+  const { baroAnalytics, gpsAnalytics } = calculateAnalytics(
+    sharedSeconds,
+    maps,
+    calibrator1.fn,
+    calibrator2.fn,
+  )
 
   return {
-    // Altitude domain params (only if defined)
+    calibrateBaro1: calibrator1.fn,
+    calibrateBaro2: calibrator2.fn,
     baro1Slope: calibrator1.altitudeSlope,
     baro2Slope: calibrator2.altitudeSlope,
     baro1Offset: calibrator1.altitudeOffset,
     baro2Offset: calibrator2.altitudeOffset,
-
-    // Pressure domain params (only if defined)
     baro1PressureSlope: calibrator1.pressureSlope,
     baro2PressureSlope: calibrator2.pressureSlope,
     baro1PressureOffsetPa: calibrator1.pressureOffset,
     baro2PressureOffsetPa: calibrator2.pressureOffset,
-
-    pointsUsed,
+    pointsUsed: Math.min(calibrator1.pointsUsed, calibrator2.pointsUsed),
     baroAnalytics,
     gpsAnalytics,
   }
-}
-
-function getTimestampsWithCompleteData(file: IGCFileWithMetadata): Array<number> {
-  return file.fixes
-    .filter((fix) => fix.gpsAltitude !== null && fix.pressureAltitude !== null)
-    .map((fix) => fix.timestamp)
 }
 
 export function findCommonTimeRange(
   file1: IGCFileWithMetadata,
   file2: IGCFileWithMetadata,
 ): TimeRange | null {
-  const file1Times = getTimestampsWithCompleteData(file1)
-  const file2Times = getTimestampsWithCompleteData(file2)
+  const getTimestamps = (file: IGCFileWithMetadata) =>
+    file.fixes
+      .filter((fix) => fix.gpsAltitude !== null && fix.pressureAltitude !== null)
+      .map((fix) => fix.timestamp)
+
+  const file1Times = getTimestamps(file1)
+  const file2Times = getTimestamps(file2)
 
   if (file1Times.length === 0 || file2Times.length === 0) {
     return null

@@ -1,0 +1,9 @@
+https://bulk.meteostat.net/v2/stations/lite.json.gz
+
+https://data.meteostat.net/daily/{year}/{station}.csv.gz
+https://data.meteostat.net/hourly/{year}/{station}.csv.gz
+
+wget https://data.meteostat.net/daily/2025/LHPR0.csv.gz -O daily.csv.gz
+wget https://data.meteostat.net/hourly/2025/LHPR0.csv.gz -O hourly.csv.gz
+
+gunzip *.gz
