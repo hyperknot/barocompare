@@ -17,7 +17,7 @@ const CALIBRATION_OPTIONS: Array<CalibrationOption> = [
     description: 'Constant offset using early flight data',
   },
   {
-    method: 'offset-press',
+    method: 'offset-press-1pt',
     label: '1-Point Offset (Press)',
     description: 'Constant offset in pressure space (Pa)',
   },

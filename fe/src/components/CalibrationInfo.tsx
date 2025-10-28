@@ -10,7 +10,7 @@ interface CalibrationInfoProps {
 
 const METHOD_LABELS: Record<CalibrationMethod, string> = {
   'offset-alt-1pt': '1-Point Offset (Altitude)',
-  'offset-press': '1-Point Offset (Pressure)',
+  'offset-press-1pt': '1-Point Offset (Pressure)',
   'scale-press-1pt': '1-Point Scale (Pressure)',
   'linear-alt': 'Linear Fit (Altitude)',
   'linear-press': 'Linear Fit (Pressure)',
@@ -18,7 +18,7 @@ const METHOD_LABELS: Record<CalibrationMethod, string> = {
 
 export const CalibrationInfoPanel: Component<CalibrationInfoProps> = (props) => {
   const isLinear = () => props.method === 'linear-alt' || props.method === 'linear-press'
-  const isOffset = () => props.method === 'offset-alt-1pt' || props.method === 'offset-press'
+  const isOffset = () => props.method === 'offset-alt-1pt' || props.method === 'offset-press-1pt'
 
   return (
     <div class="mb-4 space-y-4">

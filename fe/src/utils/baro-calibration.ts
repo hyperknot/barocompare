@@ -2,7 +2,7 @@
 
 export type CalibrationMethod =
   | 'offset-alt-1pt' // h_cal = h_raw + const (median/mean offset in altitude)
-  | 'offset-press' // P_cal = P_raw + const (median pressure offset), then to altitude
+  | 'offset-press-1pt' // P_cal = P_raw + const (median pressure offset), then to altitude
   | 'scale-press-1pt' // P_cal = s * P_raw (median scale), then to altitude
   | 'linear-alt' // h_cal = a*h_raw + b  (robust linear fit)
   | 'linear-press' // P_cal = a*P_raw + b (robust linear in P), then to altitude
@@ -209,11 +209,11 @@ export function buildCalibrator(
     }
   }
 
-  if (method === 'offset-press' || method === 'linear-press' || method === 'scale-press-1pt') {
+  if (method === 'offset-press-1pt' || method === 'linear-press' || method === 'scale-press-1pt') {
     const pRaw = pairs.map((p) => pressureFromAltitudeISA(p.h, p0, t0, L))
     const pRef = pairs.map((p) => pressureFromAltitudeISA(p.href, p0, t0, L))
 
-    if (method === 'offset-press') {
+    if (method === 'offset-press-1pt') {
       const diffs = pRef.map((pr, i) => pr - pRaw[i])
       const b = median(diffs)
       const fn = (h: number) => {
